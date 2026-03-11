@@ -1,0 +1,10 @@
+app = "telegrambot-filippo"
+
+[env]
+  PORT = "8080"
+
+[deploy]
+  release_command = ""
+
+[experimental]
+  auto_rollback = true
