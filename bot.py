@@ -8,16 +8,21 @@ import base64
 from datetime import datetime, timedelta
 import hashlib
 import urllib.parse
+import os  # ← для переменных окружения Bothost
 
-# Токен вашего бота от BotFather
-BOT_TOKEN = "7718148809:AAGhum51GFhGCP_5wuD1fPocT_Jzq_swjoU"
+# ====================== ТОКЕНЫ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ (Bothost) ======================
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден! Добавь переменную BOT_TOKEN в настройках Bothost.")
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    print("⚠️ OPENAI_API_KEY не найден. Чат с AI будет отключён.")
 
 # Создаем экземпляр бота
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # =============== РАСШИРЕННЫЕ ВИКТОРИНЫ ===============
-
-# Викторина по истории
 history_quiz = [
     {"question": "В каком году началась Вторая мировая война?", "options": ["1938", "1939", "1940", "1941"], "correct": 1},
     {"question": "Кто был первым президентом США?", "options": ["Джордж Вашингтон", "Томас Джефферсон", "Авраам Линкольн", "Джон Адамс"], "correct": 0},
@@ -28,8 +33,6 @@ history_quiz = [
     {"question": "В каком году была открыта Америка?", "options": ["1491", "1492", "1493", "1494"], "correct": 1},
     {"question": "Кто построил первую пирамиду в Египте?", "options": ["Хеопс", "Джосер", "Хефрен", "Микерин"], "correct": 1},
 ]
-
-# Викторина по географии
 geography_quiz = [
     {"question": "Какая самая длинная река в мире?", "options": ["Амазонка", "Нил", "Миссисипи", "Янцзы"], "correct": 1},
     {"question": "Столица Австралии?", "options": ["Сидней", "Мельбурн", "Канберра", "Перт"], "correct": 2},
@@ -40,8 +43,6 @@ geography_quiz = [
     {"question": "Столица Канады?", "options": ["Торонто", "Ванкувер", "Монреаль", "Оттава"], "correct": 3},
     {"question": "Самая маленькая страна в мире?", "options": ["Монако", "Ватикан", "Сан-Марино", "Лихтенштейн"], "correct": 1},
 ]
-
-# Викторина по науке
 science_quiz = [
     {"question": "Сколько хромосом у человека?", "options": ["44", "46", "48", "50"], "correct": 1},
     {"question": "Химический символ золота?", "options": ["Go", "Gd", "Au", "Ag"], "correct": 2},
@@ -52,8 +53,6 @@ science_quiz = [
     {"question": "Формула воды?", "options": ["H2O", "CO2", "NaCl", "CH4"], "correct": 0},
     {"question": "Единица измерения электрического тока?", "options": ["Вольт", "Ампер", "Ом", "Ватт"], "correct": 1},
 ]
-
-# Викторина по IT
 it_quiz = [
     {"question": "Кто создал язык программирования Python?", "options": ["Линус Торвальдс", "Гвидо ван Россум", "Деннис Ритчи", "Джеймс Гослинг"], "correct": 1},
     {"question": "Что означает HTML?", "options": ["Hypertext Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlink Text Management Language"], "correct": 0},
@@ -64,8 +63,6 @@ it_quiz = [
     {"question": "Что означает SQL?", "options": ["Structured Query Language", "Simple Query Language", "System Query Language", "Standard Query Language"], "correct": 0},
     {"question": "В каком году был создан Linux?", "options": ["1989", "1991", "1993", "1995"], "correct": 1},
 ]
-
-# Викторина по литературе
 literature_quiz = [
     {"question": "Кто написал 'Войну и мир'?", "options": ["Достоевский", "Толстой", "Тургенев", "Чехов"], "correct": 1},
     {"question": "Главный герой романа 'Преступление и наказание'?", "options": ["Раскольников", "Безухов", "Онегин", "Печорин"], "correct": 0},
@@ -76,8 +73,6 @@ literature_quiz = [
     {"question": "Кто написал 'Евгений Онегин'?", "options": ["Лермонтов", "Пушкин", "Некрасов", "Фет"], "correct": 1},
     {"question": "Автор 'Отцы и дети'?", "options": ["Толстой", "Достоевский", "Тургенев", "Гоголь"], "correct": 2},
 ]
-
-# Объединяем все викторины
 all_quizzes = {
     "🏛️ История": history_quiz,
     "🌍 География": geography_quiz,
@@ -87,7 +82,6 @@ all_quizzes = {
 }
 
 # =============== РАСШИРЕННЫЕ ЦИТАТЫ ===============
-
 motivational_quotes = [
     "Не откладывайте на завтра то, что можете сделать сегодня! 💪",
     "Каждый день - это новая возможность стать лучше! ✨",
@@ -105,7 +99,6 @@ motivational_quotes = [
     "Препятствия не должны останавливать вас! 🔥",
     "Неудача - это просто возможность начать заново, но уже более разумно! 🧠"
 ]
-
 wisdom_quotes = [
     "Знание - сила, но знание того, как применить его - мудрость! 🧭",
     "Не судите человека по его успехам, судите по тому, как он преодолевает неудачи! ⚖️",
@@ -116,7 +109,6 @@ wisdom_quotes = [
     "Самая большая комната в мире - это комната для улучшений! 🏠",
     "Образование - это то, что остается после того, как забываешь все, чему учился в школе! 🎓",
 ]
-
 funny_quotes = [
     "Программист - это человек, который решает проблемы, о которых вы не знали! 👨‍💻",
     "Кофе и код - все, что нужно для счастья! ☕",
@@ -129,8 +121,6 @@ funny_quotes = [
 ]
 
 # =============== ИГРЫ И РАЗВЛЕЧЕНИЯ ===============
-
-# Загадки
 riddles = [
     {"question": "Что можно сломать, даже не касаясь?", "answer": "обещание", "hint": "Это не физический объект"},
     {"question": "Что имеет ключи, но не может открыть замки?", "answer": "пианино", "hint": "Музыкальный инструмент"},
@@ -141,8 +131,6 @@ riddles = [
     {"question": "Что всегда идет, но никогда не приходит?", "answer": "завтра", "hint": "Временной период"},
     {"question": "Что можно увидеть с закрытыми глазами?", "answer": "сон", "hint": "Происходит ночью"}
 ]
-
-# Анекдоты
 jokes = [
     "- Доктор, у меня проблемы с памятью!\n- С каких пор?\n- С каких пор что? 🤔",
     "Программист ложится спать в 3 ночи и ставит на тумбочку два стакана: один с водой на случай, если захочется пить, второй пустой - на случай, если не захочется! 💤",
@@ -152,8 +140,6 @@ jokes = [
     "Системный администратор - это человек, который приходит в ваш офис, чтобы починить принтер, и случайно сломать интернет! 🖨️",
     "- В чем разница между программистом и пользователем?\n- Программист думает, что стакан наполовину полон. Пользователь думает, что стакан сломан! 🥤"
 ]
-
-# Факты
 facts = [
     "🐙 У осьминога три сердца и голубая кровь!",
     "🦒 Жираф может обойтись без воды дольше верблюда!",
@@ -173,8 +159,6 @@ facts = [
 ]
 
 # =============== УТИЛИТЫ ===============
-
-# Переводчик (базовый словарь)
 translation_dict = {
     "hello": "привет", "goodbye": "до свидания", "thank you": "спасибо",
     "please": "пожалуйста", "yes": "да", "no": "нет", "water": "вода",
@@ -183,22 +167,15 @@ translation_dict = {
     "friend": "друг", "family": "семья", "cat": "кот", "dog": "собака"
 }
 
-# QR код генератор (упрощенный)
 def generate_simple_qr_link(text):
-    """Генерация ссылки на QR код через бесплатный сервис"""
     encoded_text = urllib.parse.quote(text)
     return f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={encoded_text}"
 
-# Калькулятор
 def calculate(expression):
-    """Безопасный калькулятор"""
     try:
-        # Разрешенные символы
         allowed_chars = set('0123456789+-*/.() ')
         if not all(c in allowed_chars for c in expression):
             return "❌ Недопустимые символы в выражении"
-        
-        # Вычисление
         result = eval(expression)
         return f"🧮 {expression} = {result}"
     except ZeroDivisionError:
@@ -206,24 +183,19 @@ def calculate(expression):
     except:
         return "❌ Ошибка в выражении"
 
-# Бесплатная погода
 def get_free_weather(city):
-    """Получение погоды через бесплатный API без ключа"""
     try:
         url = f"http://wttr.in/{city}?format=j1"
         response = requests.get(url, timeout=10)
-        
         if response.status_code == 200:
             data = response.json()
             current = data['current_condition'][0]
-            
             temp = current['temp_C']
             feels_like = current['FeelsLikeC']
             humidity = current['humidity']
             desc = current['weatherDesc'][0]['value']
             wind = current['windspeedKmph']
             pressure = current['pressure']
-            
             weather_code = int(current['weatherCode'])
             if weather_code in [113]:
                 emoji = "☀️"
@@ -237,10 +209,8 @@ def get_free_weather(city):
                 emoji = "🌨️"
             else:
                 emoji = "☁️"
-            
             return f"""
 {emoji} Погода в {city}
-
 🌡️ Температура: {temp}°C (ощущается как {feels_like}°C)
 📝 Описание: {desc}
 💧 Влажность: {humidity}%
@@ -249,72 +219,38 @@ def get_free_weather(city):
 """
         else:
             return "❌ Город не найден или сервис недоступен"
-            
     except:
         return "❌ Ошибка получения данных о погоде"
 
-# =============== ЧАТ GPT ФУНКЦИЯ ===============
-
 def chat_gpt(message_text):
-    """Интеграция с ChatGPT API"""
+    if not OPENAI_API_KEY:
+        return "❌ Чат с AI временно недоступен (API-ключ не настроен в Bothost)."
     try:
-        # ВСТАВИТЬ ВАШ API КЛЮЧ CHATGPT ЗДЕСЬ:
-        API_KEY = "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"  # <--- Замените эту строку на ваш реальный API ключ OpenAI
-
         url = "https://api.openai.com/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {API_KEY}",
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
             "Content-Type": "application/json"
         }
         data = {
-            "model": "gpt-3.5-turbo",  # Или другая модель, например, "gpt-4" если доступна
-            "messages": [
-                {"role": "user", "content": message_text}
-            ]
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": message_text}]
         }
         response = requests.post(url, headers=headers, json=data, timeout=10)
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         else:
-            return f"❌ Ошибка обращения к ChatGPT: {response.status_code}"
+            return f"❌ Ошибка OpenAI: {response.status_code}"
     except Exception as e:
         return f"❌ Ошибка: {str(e)}"
 
-@bot.message_handler(commands=['chat'])
-def chat_command(message):
-    bot.send_message(message.chat.id, "🤖 Задайте вопрос или напишите, о чем хотите поговорить:")
-    bot.register_next_step_handler(message, process_chat)
-
-def process_chat(message):
-    user_id = message.from_user.id
-    if user_id not in user_data:
-        user_data[user_id] = {
-            'name': message.from_user.first_name or "Друг",
-            'quiz_scores': {name: 0 for name in all_quizzes.keys()},
-            'total_score': 0,
-            'commands_used': 0,
-            'start_date': datetime.now().strftime('%Y-%m-%d'),
-            'riddles_solved': 0,
-            'calculations_done': 0,
-            'chat_interactions': 0
-        }
-    
-    response = chat_gpt(message.text.strip())
-    user_data[user_id]['chat_interactions'] = user_data[user_id].get('chat_interactions', 0) + 1
-    user_data[user_id]['commands_used'] += 1
-    bot.send_message(message.chat.id, response)
-
 # =============== ХРАНИЛИЩЕ ДАННЫХ ===============
-
 user_data = {}
 
 # =============== ОБРАБОТЧИКИ КОМАНД ===============
-
 @bot.message_handler(commands=['start'])
 def start_message(message):
     user_id = message.from_user.id
     user_name = message.from_user.first_name or "Друг"
-    
     if user_id not in user_data:
         user_data[user_id] = {
             'name': user_name,
@@ -326,7 +262,6 @@ def start_message(message):
             'calculations_done': 0,
             'chat_interactions': 0
         }
-    
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     buttons = [
         "🎯 Викторины", "💡 Мотивация", "🎲 Случайное число", "📊 Статистика",
@@ -334,53 +269,43 @@ def start_message(message):
         "🧮 Калькулятор", "🔤 Переводчик", "📱 QR код", "🎮 Игры",
         "ℹ️ Помощь", "🔮 Гадание", "🤖 Чат с AI"
     ]
-    
     for i in range(0, len(buttons), 2):
         markup.row(buttons[i], buttons[i+1] if i+1 < len(buttons) else "")
-    
     welcome_text = f"""
-🤖 Добро пожаловать, {user_name}! 
-
+🤖 Добро пожаловать, {user_name}!
 🎉 Я - супер-бот с множеством функций:
-
 🎯 Викторины по 5 темам (история, география, наука, IT, литература)
 🌤 Бесплатная погода для любого города
 💡 Мотивационные цитаты и мудрость
-🧩 Загадки и головоломки  
+🧩 Загадки и головоломки
 😂 Анекдоты и интересные факты
 🧮 Калькулятор и переводчик
 📱 Генератор QR кодов
 🎮 Мини-игры и развлечения
 🔮 Гадания и предсказания
 🤖 Чат с искусственным интеллектом
-
 Выберите что вас интересует! ⬇️
 """
-    
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
     help_text = """
 📋 Полный список команд:
-
 🎯 ВИКТОРИНЫ:
 /quiz - выбрать викторину
-/history - викторина по истории  
+/history - викторина по истории
 /geography - викторина по географии
 /science - викторина по науке
 /it - викторина по IT
 /literature - викторина по литературе
-
 🌤 ПОГОДА:
 /weather - актуальная погода
 /forecast - прогноз погоды
-
 💡 МОТИВАЦИЯ:
 /motivation - мотивационная цитата
 /wisdom - мудрая мысль
 /joke - анекдот
-
 🎮 РАЗВЛЕЧЕНИЯ:
 /riddle - загадка
 /fact - интересный факт
@@ -388,20 +313,17 @@ def help_message(message):
 /dice - бросить кубик
 /coin - подбросить монетку
 /fortune - гадание
-
 🛠 УТИЛИТЫ:
 /calc - калькулятор
 /translate - переводчик
 /qr - генератор QR кода
 /stats - ваша статистика
 /chat - чат с AI
-
 Или просто используйте кнопки меню! 🎯
 """
     bot.send_message(message.chat.id, help_text)
 
 # =============== ВИКТОРИНЫ ===============
-
 @bot.message_handler(commands=['quiz'])
 def quiz_menu(message):
     markup = types.InlineKeyboardMarkup(row_width=2)
@@ -409,33 +331,28 @@ def quiz_menu(message):
     for quiz_name in all_quizzes.keys():
         callback_data = f"select_quiz_{quiz_name.split()[1].lower()}"
         buttons.append(types.InlineKeyboardButton(quiz_name, callback_data=callback_data))
-    
     for i in range(0, len(buttons), 2):
         if i + 1 < len(buttons):
             markup.row(buttons[i], buttons[i+1])
         else:
             markup.row(buttons[i])
-    
     markup.row(types.InlineKeyboardButton("🎲 Случайная викторина", callback_data="select_quiz_random"))
-    
     bot.send_message(message.chat.id, "🎯 Выберите тему викторины:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('select_quiz_'))
 def select_quiz(call):
     quiz_type = call.data.replace('select_quiz_', '')
-    
     if quiz_type == 'random':
         quiz_name = random.choice(list(all_quizzes.keys()))
     else:
         quiz_map = {
             'история': '🏛️ История',
-            'география': '🌍 География', 
+            'география': '🌍 География',
             'наука': '🔬 Наука',
             'it': '💻 IT',
             'литература': '📚 Литература'
         }
         quiz_name = quiz_map.get(quiz_type, '🏛️ История')
-    
     start_quiz(call.message, quiz_name)
     bot.answer_callback_query(call.id)
 
@@ -448,22 +365,18 @@ def start_quiz(message, quiz_type):
             'commands_used': 0,
             'chat_interactions': 0
         }
-    
     questions = all_quizzes[quiz_type]
     question_data = random.choice(questions)
-    
     markup = types.InlineKeyboardMarkup(row_width=2)
     buttons = []
     for i, option in enumerate(question_data['options']):
         callback_data = f"quiz_{i}_{question_data['correct']}_{quiz_type}"
         buttons.append(types.InlineKeyboardButton(option, callback_data=callback_data))
-    
     for i in range(0, len(buttons), 2):
         if i + 1 < len(buttons):
             markup.row(buttons[i], buttons[i+1])
         else:
             markup.row(buttons[i])
-    
     bot.send_message(message.chat.id, f"{quiz_type}\n\n❓ {question_data['question']}", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('quiz_') and len(call.data.split('_')) >= 4)
@@ -474,7 +387,6 @@ def quiz_callback(call):
         selected_answer = int(data[1])
         correct_answer = int(data[2])
         quiz_type = '_'.join(data[3:])
-        
         if user_id not in user_data:
             user_data[user_id] = {
                 'quiz_scores': {name: 0 for name in all_quizzes.keys()},
@@ -482,7 +394,6 @@ def quiz_callback(call):
                 'commands_used': 0,
                 'chat_interactions': 0
             }
-        
         if selected_answer == correct_answer:
             user_data[user_id]['quiz_scores'][quiz_type] += 1
             user_data[user_id]['total_score'] += 1
@@ -493,14 +404,11 @@ def quiz_callback(call):
             bot.answer_callback_query(call.id, "❌ Неправильно")
             result_text = "😔 Неправильно. Но не сдавайтесь!"
             emoji = "💪"
-        
         bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-        
         markup = types.InlineKeyboardMarkup()
         btn_again = types.InlineKeyboardButton(f"🔄 Еще {quiz_type}", callback_data=f"select_quiz_{quiz_type.split()[1].lower()}")
         btn_menu = types.InlineKeyboardButton("📚 Другая тема", callback_data="select_quiz_menu")
         markup.row(btn_again, btn_menu)
-        
         bot.send_message(
             call.message.chat.id,
             f"{emoji} {result_text}\n\nВаш счет в {quiz_type}: {user_data[user_id]['quiz_scores'][quiz_type]}\nОбщий счет: {user_data[user_id]['total_score']}",
@@ -516,7 +424,6 @@ def back_to_quiz_menu(call):
     bot.answer_callback_query(call.id)
 
 # =============== ПОГОДА ===============
-
 @bot.message_handler(commands=['weather'])
 def weather_command(message):
     bot.send_message(message.chat.id, "🌤 Введите название города:")
@@ -527,12 +434,10 @@ def get_weather_city(message):
     if not city:
         bot.send_message(message.chat.id, "❌ Пожалуйста, введите название города!")
         return
-    
     weather_info = get_free_weather(city)
     bot.send_message(message.chat.id, weather_info)
 
 # =============== МОТИВАЦИЯ И ЦИТАТЫ ===============
-
 @bot.message_handler(commands=['motivation'])
 def motivation_command(message):
     quote = random.choice(motivational_quotes)
@@ -549,7 +454,6 @@ def joke_command(message):
     bot.send_message(message.chat.id, f"😂 {joke}")
 
 # =============== РАЗВЛЕЧЕНИЯ ===============
-
 @bot.message_handler(commands=['riddle'])
 def riddle_command(message):
     user_id = message.from_user.id
@@ -564,15 +468,12 @@ def riddle_command(message):
             'calculations_done': 0,
             'chat_interactions': 0
         }
-    
     riddle = random.choice(riddles)
     user_data[user_id]['current_riddle'] = riddle
     user_data[user_id]['riddle_attempts'] = 0
-
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("📝 Подсказка", callback_data="riddle_hint"))
     markup.add(types.InlineKeyboardButton("🙌 Сдаться", callback_data="riddle_giveup"))
-
     bot.send_message(
         message.chat.id,
         f"🧩 Загадка:\n{riddle['question']}\n\nНапишите ответ или используйте кнопки:",
@@ -585,11 +486,9 @@ def check_riddle_answer(message):
     if user_id not in user_data or 'current_riddle' not in user_data[user_id]:
         bot.send_message(message.chat.id, "❌ Нет активной загадки! Используйте /riddle")
         return
-    
     user_answer = message.text.strip().lower()
     correct_answer = user_data[user_id]['current_riddle']['answer'].lower()
     user_data[user_id]['riddle_attempts'] += 1
-
     if user_answer == correct_answer:
         user_data[user_id]['riddles_solved'] += 1
         user_data[user_id]['total_score'] += 2
@@ -625,7 +524,6 @@ def riddle_callback(call):
         bot.send_message(call.message.chat.id, "❌ Нет активной загадки! Используйте /riddle")
         bot.answer_callback_query(call.id)
         return
-
     if call.data == 'riddle_hint':
         bot.send_message(
             call.message.chat.id,
@@ -633,7 +531,7 @@ def riddle_callback(call):
         )
         bot.answer_callback_query(call.id)
         bot.register_next_step_handler(call.message, check_riddle_answer)
-    else:  # giveup
+    else:
         correct_answer = user_data[user_id]['current_riddle']['answer']
         bot.send_message(
             call.message.chat.id,
@@ -679,7 +577,6 @@ def fortune_command(message):
     bot.send_message(message.chat.id, fortune)
 
 # =============== УТИЛИТЫ ===============
-
 @bot.message_handler(commands=['calc'])
 def calc_command(message):
     bot.send_message(message.chat.id, "🧮 Введите математическое выражение (например, 2+2):")
@@ -698,7 +595,6 @@ def process_calc(message):
             'calculations_done': 0,
             'chat_interactions': 0
         }
-    
     expression = message.text.strip()
     result = calculate(expression)
     user_data[user_id]['calculations_done'] += 1
@@ -725,7 +621,6 @@ def process_qr(message):
     if not text:
         bot.send_message(message.chat.id, "❌ Пожалуйста, введите текст или ссылку!")
         return
-    
     qr_url = generate_simple_qr_link(text)
     bot.send_message(message.chat.id, "📱 Ваш QR-код:")
     bot.send_photo(message.chat.id, qr_url)
@@ -744,26 +639,46 @@ def stats_command(message):
             'calculations_done': 0,
             'chat_interactions': 0
         }
-    
     stats = user_data[user_id]
     quiz_stats = "\n".join([f"{name}: {score} баллов" for name, score in stats['quiz_scores'].items()])
     stats_text = f"""
 📊 Статистика для {stats['name']}:
-
 🎯 Общий счет: {stats['total_score']}
 🧩 Решено загадок: {stats['riddles_solved']}
 🧮 Вычислений: {stats['calculations_done']}
 🤖 Чатов с AI: {stats['chat_interactions']}
 📜 Команд использовано: {stats['commands_used']}
 📅 Дата регистрации: {stats['start_date']}
-
 🏅 Результаты викторин:
 {quiz_stats}
 """
     bot.send_message(message.chat.id, stats_text)
 
-# =============== ОБРАБОТЧИК КНОПОК МЕНЮ ===============
+# =============== ЧАТ С AI ===============
+@bot.message_handler(commands=['chat'])
+def chat_command(message):
+    bot.send_message(message.chat.id, "🤖 Задайте вопрос или напишите, о чем хотите поговорить:")
+    bot.register_next_step_handler(message, process_chat)
 
+def process_chat(message):
+    user_id = message.from_user.id
+    if user_id not in user_data:
+        user_data[user_id] = {
+            'name': message.from_user.first_name or "Друг",
+            'quiz_scores': {name: 0 for name in all_quizzes.keys()},
+            'total_score': 0,
+            'commands_used': 0,
+            'start_date': datetime.now().strftime('%Y-%m-%d'),
+            'riddles_solved': 0,
+            'calculations_done': 0,
+            'chat_interactions': 0
+        }
+    response = chat_gpt(message.text.strip())
+    user_data[user_id]['chat_interactions'] = user_data[user_id].get('chat_interactions', 0) + 1
+    user_data[user_id]['commands_used'] += 1
+    bot.send_message(message.chat.id, response)
+
+# =============== ОБРАБОТЧИК КНОПОК МЕНЮ ===============
 @bot.message_handler(content_types=['text'])
 def handle_text(message):
     user_id = message.from_user.id
@@ -778,10 +693,8 @@ def handle_text(message):
             'calculations_done': 0,
             'chat_interactions': 0
         }
-    
     user_data[user_id]['commands_used'] += 1
     text = message.text.strip()
-
     commands = {
         "🎯 Викторины": quiz_menu,
         "💡 Мотивация": motivation_command,
@@ -799,7 +712,6 @@ def handle_text(message):
         "🔮 Гадание": fortune_command,
         "🤖 Чат с AI": chat_command
     }
-
     command = commands.get(text)
     if command:
         command(message)
@@ -807,12 +719,11 @@ def handle_text(message):
         bot.send_message(message.chat.id, "❓ Неизвестная команда. Используйте кнопки меню или /help")
 
 # =============== ЗАПУСК БОТА ===============
-
 if __name__ == "__main__":
     print("Бот запущен...")
     try:
         bot.infinity_polling()
     except Exception as e:
         print(f"Ошибка: {e}")
-        time.sleep(10)  # Пауза перед перезапуском
+        time.sleep(10)
         bot.infinity_polling()
