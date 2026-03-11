@@ -8,9 +8,12 @@ import base64
 from datetime import datetime, timedelta
 import hashlib
 import urllib.parse
+import os
 
-# Токен вашего бота от BotFather
-BOT_TOKEN = "7718148809:AAEJZWrSjrC4xTdvb-SUC001xxy9g3_hBMA"
+# Токен берём из переменных окружения Bothost
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("❌ BOT_TOKEN не найден! Добавь переменную BOT_TOKEN в настройках Bothost.")
 
 # Создаем экземпляр бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -816,3 +819,4 @@ if __name__ == "__main__":
         print(f"Ошибка: {e}")
         time.sleep(10)  # Пауза перед перезапуском
         bot.infinity_polling()
+
