@@ -175,6 +175,306 @@ facts = [
     "🌋 На Венере день длиннее года!"
 ]
 
+# =============== КТО ХОЧЕТ СТАТЬ МИЛЛИОНЕРОМ ===============
+
+# Вопросы для игры (суммы в рублях, для демо)
+millionaire_questions = [
+    {"level": 1, "sum": 500, "question": "Какой газ используется в лампах накаливания?", "options": ["Кислород", "Азот", "Аргон", "Углекислый газ"], "correct": 2},
+    {"level": 2, "sum": 1000, "question": "Столица Франции?", "options": ["Лондон", "Париж", "Берлин", "Мадрид"], "correct": 1},
+    {"level": 3, "sum": 2000, "question": "Сколько континентов на Земле?", "options": ["5", "6", "7", "8"], "correct": 2},
+    {"level": 4, "sum": 3000, "question": "Кто написал 'Войну и мир'?", "options": ["Достоевский", "Толстой", "Чехов", "Пушкин"], "correct": 1},
+    {"level": 5, "sum": 5000, "question": "Какое животное является символом Всемирного фонда дикой природы (WWF)?", "options": ["Панда", "Тигр", "Слон", "Кит"], "correct": 0},
+    {"level": 6, "sum": 10000, "question": "Какая планета самая большая в Солнечной системе?", "options": ["Сатурн", "Юпитер", "Нептун", "Уран"], "correct": 1},
+    {"level": 7, "sum": 15000, "question": "В каком году произошла Октябрьская революция?", "options": ["1914", "1917", "1921", "1905"], "correct": 1},
+    {"level": 8, "sum": 25000, "question": "Какой химический элемент обозначается символом 'O'?", "options": ["Золото", "Серебро", "Кислород", "Осмий"], "correct": 2},
+    {"level": 9, "sum": 50000, "question": "Кто изобрёл телефон?", "options": ["Эдисон", "Тесла", "Белл", "Маркони"], "correct": 2},
+    {"level": 10, "sum": 100000, "question": "Сколько граммов в килограмме?", "options": ["100", "1000", "500", "2000"], "correct": 1},
+    {"level": 11, "sum": 200000, "question": "Какая страна подарила США статую Свободы?", "options": ["Англия", "Франция", "Италия", "Германия"], "correct": 1},
+    {"level": 12, "sum": 400000, "question": "Какой самый твёрдый минерал?", "options": ["Кварц", "Корунд", "Алмаз", "Гранит"], "correct": 2},
+    {"level": 13, "sum": 800000, "question": "В каком году человек впервые ступил на Луну?", "options": ["1965", "1969", "1972", "1961"], "correct": 1},
+    {"level": 14, "sum": 1500000, "question": "Кто написал картину 'Мона Лиза'?", "options": ["Микеланджело", "Рафаэль", "Леонардо да Винчи", "Тициан"], "correct": 2},
+    {"level": 15, "sum": 3000000, "question": "Какая самая длинная река в мире?", "options": ["Нил", "Амазонка", "Янцзы", "Миссисипи"], "correct": 1},  # По разным данным, но примем Нил
+]
+
+# Словарь для хранения активных игр пользователей
+millionaire_games = {}
+
+# Несгораемые суммы (после 5-го и 10-го вопросов)
+FIREPROOF_LEVELS = {5: 5000, 10: 100000}
+
+def get_fireproof_sum(level):
+    """Возвращает несгораемую сумму на данном уровне (если достигнут порог)"""
+    if level > 10:
+        return 100000
+    elif level > 5:
+        return 5000
+    else:
+        return 0
+
+@bot.message_handler(commands=['millionaire'])
+def millionaire_start(message):
+    user_id = message.from_user.id
+    # Инициализация новой игры
+    game = {
+        'current_level': 1,  # текущий уровень (1-15)
+        'questions': millionaire_questions.copy(),  # копируем все вопросы
+        'used_questions': [],  # использованные вопросы (будем удалять)
+        'prize': 0,  # текущий выигрыш (сумма последнего правильного ответа)
+        'fireproof': 0,  # несгораемая сумма
+        'hints_used': {  # использованные подсказки
+            'fifty': False,
+            'call': False,
+            'audience': False
+        },
+        'message_id': None  # id последнего сообщения для редактирования
+    }
+    # Перемешаем вопросы? Лучше оставить по порядку, но можно перемешать, чтобы уровни были разными.
+    # Для реализма оставим как есть.
+    millionaire_games[user_id] = game
+    
+    # Приветствие и правила
+    welcome = """
+🎮 Добро пожаловать в игру "КТО ХОЧЕТ СТАТЬ МИЛЛИОНЕРОМ"!
+
+Правила:
+- Вам будет задано 15 вопросов разной сложности.
+- С каждым правильным ответом вы зарабатываете деньги.
+- Несгораемые суммы: после 5-го вопроса — 5000 руб., после 10-го — 100 000 руб.
+- У вас есть 3 подсказки: 50/50 (убирает два неверных ответа), звонок другу (совет), помощь зала (проценты).
+- Если ответите неверно, игра заканчивается, и вы получаете последнюю несгораемую сумму.
+- Вы можете в любой момент забрать деньги кнопкой «Забрать выигрыш».
+
+Удачи! 🍀
+    """
+    bot.send_message(message.chat.id, welcome)
+    # Запускаем первый вопрос
+    ask_millionaire_question(message.chat.id, user_id)
+
+def ask_millionaire_question(chat_id, user_id):
+    game = millionaire_games.get(user_id)
+    if not game:
+        bot.send_message(chat_id, "Игра не найдена. Начните заново командой /millionaire")
+        return
+    
+    level = game['current_level']
+    if level > len(millionaire_questions):
+        # Игра завершена, выигрыш максимальный
+        win_sum = millionaire_questions[-1]['sum']
+        bot.send_message(chat_id, f"🏆 ПОЗДРАВЛЯЕМ! Вы ответили на все вопросы и выигрываете {win_sum} руб.!")
+        del millionaire_games[user_id]
+        return
+    
+    # Получаем вопрос для текущего уровня (индекс level-1 в исходном списке)
+    q_data = millionaire_questions[level-1]  # вопросы идут по порядку уровней
+    question_text = f"💰 Вопрос {level}. Сумма: {q_data['sum']} руб.\n\n{q_data['question']}"
+    
+    # Создаем инлайн-клавиатуру с вариантами ответов и подсказками
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    # Варианты ответов (0-3)
+    for i, opt in enumerate(q_data['options']):
+        callback = f"millionaire_answer_{i}"
+        markup.add(types.InlineKeyboardButton(opt, callback_data=callback))
+    
+    # Ряд подсказок
+    hints_row = []
+    if not game['hints_used']['fifty']:
+        hints_row.append(types.InlineKeyboardButton("50/50", callback_data="millionaire_hint_fifty"))
+    if not game['hints_used']['call']:
+        hints_row.append(types.InlineKeyboardButton("📞 Друг", callback_data="millionaire_hint_call"))
+    if not game['hints_used']['audience']:
+        hints_row.append(types.InlineKeyboardButton("👥 Зал", callback_data="millionaire_hint_audience"))
+    if hints_row:
+        markup.row(*hints_row)
+    
+    # Кнопка забрать деньги
+    markup.row(types.InlineKeyboardButton("💰 Забрать деньги", callback_data="millionaire_take_money"))
+    
+    # Отправляем сообщение и сохраняем его ID для возможного редактирования (подсказки)
+    sent_msg = bot.send_message(chat_id, question_text, reply_markup=markup)
+    game['message_id'] = sent_msg.message_id
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('millionaire_'))
+def millionaire_callback(call):
+    user_id = call.from_user.id
+    chat_id = call.message.chat.id
+    game = millionaire_games.get(user_id)
+    if not game:
+        bot.answer_callback_query(call.id, "Игра не найдена. Начните /millionaire")
+        return
+    
+    action = call.data.split('_')[1]  # answer, hint, take
+    if action == 'answer':
+        # Ответ на вопрос
+        try:
+            answer_idx = int(call.data.split('_')[2])
+        except:
+            bot.answer_callback_query(call.id, "Ошибка")
+            return
+        
+        level = game['current_level']
+        q_data = millionaire_questions[level-1]
+        correct_idx = q_data['correct']
+        
+        # Проверяем ответ
+        if answer_idx == correct_idx:
+            # Правильно
+            prize = q_data['sum']
+            game['prize'] = prize
+            # Обновляем несгораемую сумму, если достигнут порог
+            if level in FIREPROOF_LEVELS:
+                game['fireproof'] = FIREPROOF_LEVELS[level]
+            
+            # Переходим на следующий уровень
+            game['current_level'] += 1
+            
+            # Удаляем клавиатуру у предыдущего вопроса
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
+            
+            # Сообщаем о правильном ответе
+            bot.send_message(chat_id, f"✅ Правильно! Вы выиграли {prize} руб.")
+            
+            # Если игра не закончена, задаем следующий вопрос
+            if game['current_level'] <= len(millionaire_questions):
+                ask_millionaire_question(chat_id, user_id)
+            else:
+                # Поздравляем с победой
+                bot.send_message(chat_id, f"🏆 ПОЗДРАВЛЯЕМ! Вы ответили на все вопросы и выигрываете {prize} руб.!")
+                del millionaire_games[user_id]
+        else:
+            # Неправильный ответ
+            # Удаляем клавиатуру
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
+            # Выигрыш = несгораемая сумма
+            win = game['fireproof']
+            bot.send_message(chat_id, f"❌ Неправильно! Правильный ответ: {q_data['options'][correct_idx]}\nИгра окончена. Ваш выигрыш: {win} руб.")
+            del millionaire_games[user_id]
+        
+        bot.answer_callback_query(call.id)
+    
+    elif action == 'hint':
+        hint_type = call.data.split('_')[2]  # fifty, call, audience
+        if game['hints_used'][hint_type]:
+            bot.answer_callback_query(call.id, "Подсказка уже использована!")
+            return
+        
+        # Помечаем подсказку как использованную
+        game['hints_used'][hint_type] = True
+        bot.answer_callback_query(call.id, "Подсказка активирована!")
+        
+        # Получаем текущий вопрос
+        level = game['current_level']
+        q_data = millionaire_questions[level-1]
+        
+        if hint_type == 'fifty':
+            # 50/50: убираем два неверных варианта
+            # Создаем новый список опций, оставляя правильный и один случайный неверный
+            correct_idx = q_data['correct']
+            other_indices = [i for i in range(4) if i != correct_idx]
+            # Выбираем один случайный неверный для оставления
+            keep_wrong = random.choice(other_indices)
+            new_options = [q_data['options'][i] for i in [correct_idx, keep_wrong]]
+            # Перемешаем, чтобы не было понятно, какой правильный
+            random.shuffle(new_options)
+            
+            # Обновляем сообщение: показываем только два варианта
+            # Заменяем клавиатуру на новую с этими двумя вариантами
+            markup = types.InlineKeyboardMarkup(row_width=2)
+            for opt in new_options:
+                # Найдем оригинальный индекс этого варианта
+                original_idx = q_data['options'].index(opt)
+                callback = f"millionaire_answer_{original_idx}"
+                markup.add(types.InlineKeyboardButton(opt, callback_data=callback))
+            
+            # Добавляем подсказки, которые еще не использованы (кроме fifty)
+            hints_row = []
+            if not game['hints_used']['call']:
+                hints_row.append(types.InlineKeyboardButton("📞 Друг", callback_data="millionaire_hint_call"))
+            if not game['hints_used']['audience']:
+                hints_row.append(types.InlineKeyboardButton("👥 Зал", callback_data="millionaire_hint_audience"))
+            if hints_row:
+                markup.row(*hints_row)
+            
+            markup.row(types.InlineKeyboardButton("💰 Забрать деньги", callback_data="millionaire_take_money"))
+            
+            # Редактируем сообщение, убираем старую клавиатуру
+            bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
+            # Отправляем новое сообщение с теми же опциями, но обновленными
+            # Можно отредактировать текст вопроса и добавить пометку о подсказке
+            new_text = call.message.text + "\n\n[Подсказка 50/50: два варианта удалены]"
+            bot.send_message(chat_id, new_text, reply_markup=markup)
+            # Обновляем message_id в game? Не обязательно, так как новое сообщение
+            
+        elif hint_type == 'call':
+            # Звонок другу: друг даёт совет с вероятностью 80% правильности
+            correct_idx = q_data['correct']
+            if random.random() < 0.8:
+                friend_answer = q_data['options'][correct_idx]
+                friend_says = f"Я думаю, правильный ответ: {friend_answer}"
+            else:
+                # Ошибается: выбирает случайный неверный
+                wrong_indices = [i for i in range(4) if i != correct_idx]
+                wrong_idx = random.choice(wrong_indices)
+                friend_says = f"Я думаю, правильный ответ: {q_data['options'][wrong_idx]}"
+            bot.send_message(chat_id, f"📞 Звонок другу:\n{friend_says}")
+        
+        elif hint_type == 'audience':
+            # Помощь зала: показываем проценты
+            correct_idx = q_data['correct']
+            # Генерируем проценты: правильный ответ получает 60-80%, остальные распределяются
+            percentages = [0, 0, 0, 0]
+            correct_percent = random.randint(60, 80)
+            percentages[correct_idx] = correct_percent
+            remaining = 100 - correct_percent
+            # Распределяем остаток между неверными
+            other_indices = [i for i in range(4) if i != correct_idx]
+            # Случайно распределяем
+            for i in other_indices:
+                if remaining > 0:
+                    p = random.randint(0, remaining)
+                    percentages[i] = p
+                    remaining -= p
+                else:
+                    percentages[i] = 0
+            # Если остаток остался, добавим к последнему
+            if remaining > 0:
+                percentages[other_indices[-1]] += remaining
+            
+            # Формируем сообщение
+            result = "👥 Помощь зала:\n"
+            for i, opt in enumerate(q_data['options']):
+                result += f"{opt}: {percentages[i]}%\n"
+            bot.send_message(chat_id, result)
+        
+        # Обновляем клавиатуру текущего сообщения, убрав использованную подсказку
+        # Перестраиваем клавиатуру, исключая использованную подсказку
+        if call.message.reply_markup:
+            new_keyboard = []
+            for row in call.message.reply_markup.keyboard:
+                new_row = []
+                for btn in row:
+                    # Если это кнопка подсказки и она соответствует использованной, пропускаем
+                    if btn.callback_data == f"millionaire_hint_{hint_type}":
+                        continue
+                    new_row.append(btn)
+                if new_row:
+                    new_keyboard.append(new_row)
+            # Если после удаления строка подсказок пуста, убираем её
+            # Создаем новую клавиатуру
+            if new_keyboard:
+                new_markup = types.InlineKeyboardMarkup(keyboard=new_keyboard)
+                try:
+                    bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=new_markup)
+                except:
+                    pass  # если не получилось, игнорируем
+    
+    elif action == 'take':
+        # Забрать деньги
+        bot.edit_message_reply_markup(chat_id, call.message.message_id, reply_markup=None)
+        win = game['prize'] if game['prize'] > game['fireproof'] else game['fireproof']
+        bot.send_message(chat_id, f"💰 Вы забрали выигрыш! Ваш выигрыш: {win} руб.")
+        del millionaire_games[user_id]
+        bot.answer_callback_query(call.id)
+
 # =============== УТИЛИТЫ ===============
 
 # Переводчик (базовый словарь)
@@ -331,11 +631,12 @@ def start_message(message):
         }
     
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    # Обновленный список кнопок с "💰 Миллионер"
     buttons = [
         "🎯 Викторины", "💡 Мотивация", "🎲 Случайное число", "📊 Статистика",
         "🌤 Погода", "🧩 Загадки", "😂 Анекдоты", "🤓 Факты",
         "🧮 Калькулятор", "🔤 Переводчик", "📱 QR код", "🎮 Игры",
-        "ℹ️ Помощь", "🔮 Гадание", "🤖 Чат с AI"
+        "💰 Миллионер", "ℹ️ Помощь", "🔮 Гадание", "🤖 Чат с AI"
     ]
     
     for i in range(0, len(buttons), 2):
@@ -355,6 +656,7 @@ def start_message(message):
 📱 Генератор QR кодов
 🎮 Мини-игры и развлечения
 🔮 Гадания и предсказания
+💰 Игра "Кто хочет стать миллионером"
 🤖 Чат с искусственным интеллектом
 
 Выберите что вас интересует! ⬇️
@@ -391,6 +693,9 @@ def help_message(message):
 /dice - бросить кубик
 /coin - подбросить монетку
 /fortune - гадание
+
+💰 МИЛЛИОНЕР:
+/millionaire - начать игру "Кто хочет стать миллионером"
 
 🛠 УТИЛИТЫ:
 /calc - калькулятор
@@ -785,6 +1090,7 @@ def handle_text(message):
     user_data[user_id]['commands_used'] += 1
     text = message.text.strip()
 
+    # Обновленный словарь команд с кнопкой "💰 Миллионер"
     commands = {
         "🎯 Викторины": quiz_menu,
         "💡 Мотивация": motivation_command,
@@ -798,6 +1104,7 @@ def handle_text(message):
         "🔤 Переводчик": translate_command,
         "📱 QR код": qr_command,
         "🎮 Игры": lambda msg: bot.send_message(msg.chat.id, "🎮 Выберите игру:\n/coin - подбросить монетку\n/dice - бросить кубик"),
+        "💰 Миллионер": millionaire_start,
         "ℹ️ Помощь": help_message,
         "🔮 Гадание": fortune_command,
         "🤖 Чат с AI": chat_command
@@ -819,4 +1126,3 @@ if __name__ == "__main__":
         print(f"Ошибка: {e}")
         time.sleep(10)  # Пауза перед перезапуском
         bot.infinity_polling()
-
